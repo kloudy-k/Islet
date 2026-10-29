@@ -311,6 +311,9 @@ input[type=time].field { width: auto; padding: 8px 10px; }
 (() => {
   'use strict';
 
+  const VERSION = '1.1';        // this hub
+  const NEEDS_WORKER = '1.1';   // oldest Worker this hub works with; only bump when the Worker really has to change
+
   // ------------------------------------------------------------ storage
   const LS = {
     get(k, d) { try { const v = localStorage.getItem('islet:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -553,8 +556,31 @@ input[type=time].field { width: auto; padding: 8px 10px; }
     const f = S.feed;
     const el = $('#tab-now');
     if (!f) { el.innerHTML = `<div class="group"><div class="empty">Loading…</div></div>`; return; }
-    el.innerHTML = [weatherBlock(f.weather), gamesBlock(f.scores), motorsportBlock(f.f1), calendarBlock(f.calendar), inboxBlock(f.gmail), newsBlock(f.news)].join('');
+    el.innerHTML = [weatherBlock(f.weather), gamesBlock(f.scores), motorsportBlock(f.f1), calendarBlock(f.calendar), inboxBlock(f.gmail), newsBlock(f.news), versionLine()].join('');
     el.querySelectorAll('[data-goto]').forEach((b) => b.onclick = () => setTab(b.dataset.goto));
+  }
+
+  function workerVersion() {
+    return (S.feed && S.feed.version) || null;
+  }
+  const verNum = (v) => String(v || '0').split('.').map(Number);
+  function olderThan(a, b) {
+    const x = verNum(a), y = verNum(b);
+    for (let i = 0; i < Math.max(x.length, y.length); i++) {
+      if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0);
+    }
+    return false;
+  }
+  function versionMismatch() {
+    const w = workerVersion();
+    return !w || olderThan(w, NEEDS_WORKER);
+  }
+  function versionLine() {
+    const w = workerVersion();
+    const note = versionMismatch()
+      ? `<div class="err" style="margin-top:4px">This hub needs Worker v${NEEDS_WORKER} or newer. Paste the latest Worker code in Cloudflare.</div>`
+      : '';
+    return `<p class="hint" style="text-align:center;margin-top:28px">Islet hub v${VERSION}${w ? `, Worker v${esc(w)}` : ''}${note}</p>`;
   }
 
   function weatherBlock(w) {
@@ -850,6 +876,7 @@ input[type=time].field { width: auto; padding: 8px 10px; }
       <div class="sec"><h2>Connection</h2></div>
       <div class="group">
         <div class="row"><div class="grow"><div class="t">Worker</div><div class="s">${esc(S.conn.url)}</div></div></div>
+        <div class="row"><div class="grow"><div class="t">Versions</div><div class="s ${versionMismatch() ? 'err' : ''}" style="white-space:normal">Hub v${VERSION}, Worker ${workerVersion() ? 'v' + esc(workerVersion()) : 'older than v' + NEEDS_WORKER}${versionMismatch() ? `. This hub needs Worker v${NEEDS_WORKER} or newer.` : ''}</div></div></div>
         <div class="row"><button class="link grow err" style="text-align:left" id="disconnect">Disconnect this device</button></div>
       </div>`;
 
