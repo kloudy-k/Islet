@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Islet</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Islet">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#E3E5E8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1D1F22" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ti: #E3E5E8;        /* titanium: page */
+  --glass: #F4F5F6;     /* raised surface */
+  --ink: #000000;       /* the island, headings */
+  --text: #1E2024;
+  --muted: #5E646C;
+  --rule: #CBD0D5;
+  --mag: #2B5BA8;       /* accent */
+  --mag-soft: #DCE5F3;
+  --live: #FF3B30;
+  --ok: #1E8E4E;
+  --pill-ring: transparent;
+  --shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 1px 2px rgba(20,24,30,.08);
+  --wide: 'wdth' 125;
+  --narrow: 'wdth' 100;
+  --cond: 'wdth' 80;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ti: #1D1F22;
+    --glass: #27292D;
+    --ink: #000000;
+    --text: #EEF0F2;
+    --muted: #9AA1A9;
+    --rule: #393C41;
+    --mag: #7FA6E6;
+    --mag-soft: #22324B;
+    --pill-ring: #3A3E44;
+    --shadow: 0 1px 0 rgba(255,255,255,.04) inset;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--ti);
+  color: var(--text);
+  font-family: 'Archivo', system-ui, -apple-system, sans-serif;
+  font-variation-settings: var(--narrow);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--mag); outline-offset: 2px; border-radius: 8px; }
+.wrap { max-width: 560px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 96px); }
+.hidden { display: none !important; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- top: the island */
+.top { display: flex; flex-direction: column; align-items: center; padding: 6px 0 6px; }
+.island-row { display: flex; align-items: center; gap: 8px; min-height: 40px; }
+.pill {
+  background: var(--ink);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px var(--pill-ring);
+  height: 37px;
+  width: 126px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+  transition: width .5s cubic-bezier(.3,1.4,.4,1), height .5s cubic-bezier(.3,1.4,.4,1), border-radius .5s ease;
+}
+.pill.open { width: min(372px, calc(100vw - 80px)); height: 84px; border-radius: 42px; }
+.pill .body { opacity: 0; transition: opacity .25s ease .2s; width: 100%; padding: 0 22px; text-align: left; }
+.pill.open .body { opacity: 1; }
+.bubble {
+  width: 37px; height: 37px; border-radius: 50%;
+  background: var(--ink); color: #fff; border: 0;
+  box-shadow: 0 0 0 1px var(--pill-ring);
+  display: grid; place-items: center; font-size: 13px; font-weight: 600;
+  font-variation-settings: var(--wide);
+}
+.pl-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #A6ACB3; gap: 10px; }
+.pl-top span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-main { display: flex; justify-content: space-between; align-items: baseline; margin-top: 2px; gap: 10px; }
+.pl-main .big { font-size: 28px; font-weight: 700; font-variation-settings: var(--wide); letter-spacing: -.01em; line-height: 1.1; white-space: nowrap; }
+.pl-main .lab { font-size: 13px; color: #C9CDD2; margin-right: 6px; font-weight: 500; }
+.pl-msg { font-size: 15px; color: #E9EBEE; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--live); display: inline-block; margin-right: 6px; vertical-align: 1px; }
+.top-note { margin-top: 10px; font-size: 13px; color: var(--muted); text-align: center; }
+.top-note button { background: none; border: 0; color: var(--mag); padding: 4px 6px; font-weight: 600; }
+
+/* live sheet */
+.sheet-live { margin: -8px 0 22px; }
+
+/* ---------- headings + groups */
+h1, h2, h3 { margin: 0; color: var(--text); }
+.screen-title {
+  font-size: 34px; font-weight: 750; letter-spacing: -.02em; line-height: 1.05;
+  font-variation-settings: var(--wide); margin: 4px 0 18px;
+}
+.sec { margin: 28px 0 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.sec h2 { font-size: 19px; font-weight: 650; font-variation-settings: 'wdth' 112; letter-spacing: -.005em; }
+.sec .aside { font-size: 14px; color: var(--muted); }
+.sec button.link, button.link { background: none; border: 0; color: var(--mag); font-weight: 600; padding: 6px 0; font-size: 15px; }
+.group { background: var(--glass); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+.row { display: flex; align-items: center; gap: 12px; padding: 13px 16px; min-height: 52px; border-top: 1px solid var(--rule); }
+.row:first-child { border-top: 0; }
+.row .grow { flex: 1; min-width: 0; }
+.row .t { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .s { font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row a { color: inherit; text-decoration: none; }
+.row a.grow:active { opacity: .6; }
+.hint { font-size: 14px; color: var(--muted); padding: 2px 4px 0; margin: 8px 0 0; }
+.empty { padding: 18px 16px; color: var(--muted); font-size: 15px; }
+.err { color: #B4261C; }
+@media (prefers-color-scheme: dark) { .err { color: #FF8A80; } }
+
+/* ---------- weather */
+.wx { padding: 16px 16px 6px; }
+.wx-head { display: flex; align-items: center; gap: 14px; }
+.wx-temp { font-size: 64px; font-weight: 300; font-variation-settings: var(--wide); line-height: 1; letter-spacing: -.03em; }
+.wx-meta .t { font-weight: 600; }
+.wx-meta .s { font-size: 14px; color: var(--muted); }
+.wx-icon { margin-left: auto; color: var(--mag); }
+.hours { display: flex; gap: 2px; overflow-x: auto; padding: 14px 0 10px; scrollbar-width: none; }
+.hours::-webkit-scrollbar { display: none; }
+.hr { flex: 0 0 52px; text-align: center; font-size: 13px; color: var(--muted); }
+.hr b { display: block; color: var(--text); font-size: 15px; font-weight: 600; margin-top: 4px; }
+.hr svg { display: block; margin: 6px auto 0; color: var(--text); }
+.hr .rain { color: var(--mag); font-size: 12px; height: 16px; }
+
+/* ---------- games */
+.game { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 14px 16px; border-top: 1px solid var(--rule); }
+.game:first-child { border-top: 0; }
+.side { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.side img { width: 26px; height: 26px; object-fit: contain; flex: none; }
+.side .nm { font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side .rec { font-size: 13px; color: var(--muted); margin-left: 2px; }
+.sc { font-size: 24px; font-weight: 700; font-variation-settings: var(--wide); text-align: right; line-height: 1.1; }
+.sc.dim { color: var(--muted); font-weight: 500; }
+.gstat { grid-column: 1 / -1; font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; margin-top: 2px; }
+.gstat .on { color: var(--live); font-weight: 600; }
+.tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--mag-soft); color: var(--mag); font-weight: 600; white-space: nowrap; }
+
+/* ---------- calendar */
+.ev { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--rule); }
+.ev:first-child { border-top: 0; }
+.ev .when { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 1px; }
+.ev.soon .when { color: var(--mag); font-weight: 650; }
+.ev .t { font-weight: 550; }
+.ev .s { font-size: 14px; color: var(--muted); }
+.daybreak { padding: 10px 16px 4px; font-size: 13px; font-weight: 600; color: var(--muted); border-top: 1px solid var(--rule); background: color-mix(in srgb, var(--ti) 45%, var(--glass)); }
+
+/* ---------- inbox */
+.unread { font-size: 40px; font-weight: 700; font-variation-settings: var(--wide); line-height: 1; padding: 16px 16px 8px; }
+.unread small { font-size: 15px; font-weight: 500; color: var(--muted); font-variation-settings: var(--narrow); margin-left: 6px; letter-spacing: 0; }
+
+/* ---------- controls */
+.switch { position: relative; width: 51px; height: 31px; flex: none; }
+.switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+.switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--rule); transition: background .2s; }
+.switch span::after { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: transform .2s; }
+.switch input:checked + span { background: var(--mag); }
+.switch input:checked + span::after { transform: translateX(20px); }
+.switch input:focus-visible + span { outline: 2px solid var(--mag); outline-offset: 2px; }
+.seg { display: inline-flex; background: var(--ti); border-radius: 10px; padding: 2px; flex: none; }
+.seg button { border: 0; background: none; padding: 5px 10px; border-radius: 8px; font-size: 14px; font-weight: 550; color: var(--muted); font-variant-numeric: tabular-nums; }
+.seg button.on { background: var(--glass); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.field { width: 100%; background: var(--ti); border: 1px solid transparent; border-radius: 12px; padding: 12px 14px; font-size: 16px; }
+.field:focus { outline: none; border-color: var(--mag); }
+input[type=time].field { width: auto; padding: 8px 10px; }
+.stack { display: grid; gap: 10px; padding: 14px 16px 16px; }
+.btn { border: 0; border-radius: 12px; padding: 13px 18px; font-weight: 650; font-size: 16px; background: var(--mag); color: #fff; }
+.btn.quiet { background: var(--mag-soft); color: var(--mag); }
+.btn.ink { background: var(--ink); color: #fff; }
+.btn:disabled { opacity: .5; }
+.x { border: 0; background: none; color: var(--muted); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.x:active { background: var(--ti); }
+.logo { width: 30px; height: 30px; object-fit: contain; flex: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 16px; }
+.chip { border: 1px solid var(--rule); background: none; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 550; }
+.chip:disabled { opacity: .4; }
+.master { display: flex; align-items: center; gap: 14px; padding: 18px 16px; }
+.master .t { font-size: 18px; font-weight: 650; font-variation-settings: 'wdth' 112; }
+.notes { padding: 12px 16px; font-size: 14px; color: var(--muted); border-top: 1px solid var(--rule); }
+.notes li { margin: 2px 0; }
+
+/* ---------- tab bar */
+.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: flex; justify-content: center; gap: 4px;
+  padding: 8px 12px calc(env(safe-area-inset-bottom) + 8px);
+  background: color-mix(in srgb, var(--ti) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
+  border-top: 1px solid var(--rule);
+}
+.tabs button { flex: 0 1 120px; border: 0; background: none; padding: 6px 0 2px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.tabs button[aria-selected=true] { color: var(--mag); }
+
+/* ---------- bottom sheet */
+.scrim { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 30; opacity: 0; transition: opacity .2s; }
+.scrim.show { opacity: 1; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 31;
+  max-width: 560px; margin: 0 auto; max-height: 82dvh;
+  background: var(--glass); border-radius: 22px 22px 0 0;
+  display: flex; flex-direction: column;
+  transform: translateY(100%); visibility: hidden; transition: transform .3s cubic-bezier(.2,.9,.3,1), visibility 0s linear .3s;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.sheet.show { transform: none; visibility: visible; transition: transform .3s cubic-bezier(.2,.9,.3,1); }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px; }
+.sheet-head h3 { font-size: 19px; font-weight: 650; font-variation-settings: 'wdth' 112; }
+.sheet-body { overflow-y: auto; padding: 0 0 16px; }
+.sheet-body .row { border-top: 1px solid var(--rule); }
+.sheet .pad { padding: 4px 16px 12px; display: grid; gap: 10px; }
+
+/* ---------- toast */
+.toast {
+  position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 84px); z-index: 40;
+  transform: translate(-50%, 20px); opacity: 0;
+  background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 999px;
+  font-size: 14px; font-weight: 600; transition: opacity .2s, transform .2s; pointer-events: none;
+  box-shadow: 0 0 0 1px var(--pill-ring);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- connect */
+.connect { padding-top: 6vh; }
+.connect p { color: var(--muted); margin: 0 0 18px; max-width: 46ch; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin .9s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Connect screen -->
+  <section id="connect" class="connect hidden">
+    <div class="top"><div class="island-row"><div class="pill" aria-hidden="true"></div></div></div>
+    <h1 class="screen-title">Connect Islet</h1>
+    <p>Paste your Cloudflare Worker's address and the passcode you saved as HUB_PASSCODE. They stay on this device.</p>
+    <div class="group">
+      <div class="stack">
+        <label for="c-url" class="hint" style="margin:0">Worker address</label>
+        <input id="c-url" class="field" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://islet.yourname.workers.dev">
+        <label for="c-pass" class="hint" style="margin:0">Passcode</label>
+        <input id="c-pass" class="field" type="password" autocomplete="current-password">
+        <button id="c-go" class="btn ink">Connect</button>
+        <div id="c-err" class="hint err hidden" role="alert"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App -->
+  <main id="app" class="hidden">
+    <div class="top">
+      <div class="island-row">
+        <button id="pill" class="pill" aria-expanded="false" aria-controls="live-list" aria-label="What's on your Island"><div class="body" id="pill-body"></div></button>
+        <button id="bubble" class="bubble hidden" aria-label="More live activities"></button>
+      </div>
+      <div class="top-note" id="top-note" aria-live="polite"></div>
+    </div>
+
+    <div id="live-list" class="sheet-live hidden"></div>
+
+    <section id="tab-now" role="tabpanel"></section>
+    <section id="tab-island" role="tabpanel" class="hidden"></section>
+    <section id="tab-sources" role="tabpanel" class="hidden"></section>
+  </main>
+</div>
+
+<nav class="tabs hidden" id="tabs" role="tablist">
+  <button role="tab" data-tab="now" aria-selected="true">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="10" rx="5"/><circle cx="16" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>Now</button>
+  <button role="tab" data-tab="island" aria-selected="false">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Island</button>
+  <button role="tab" data-tab="sources" aria-selected="false">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.4 3.6 5 3.6 8s-1.1 5.6-3.6 8c-2.5-2.4-3.6-5-3.6-8S9.5 6.4 12 4z"/></svg>Sources</button>
+</nav>
+
+<div class="scrim hidden" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" inert>
+  <div class="sheet-head"><h3 id="sheet-title"></h3><button class="x" id="sheet-close" aria-label="Close">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="sheet-body" id="sheet-body"></div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ------------------------------------------------------------ storage
+  const LS = {
+    get(k, d) { try { const v = localStorage.getItem('islet:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('islet:' + k, JSON.stringify(v)); } catch {} },
+    del(k) { try { localStorage.removeItem('islet:' + k); } catch {} },
+  };
+
+  const S = {
+    conn: LS.get('conn', null),   // { url, pass }
+    feed: LS.get('feed', null),   // last feed, for instant paint
+    settings: null,
+    leagues: [],
+    tab: 'now',
+    liveOpen: false,
+  };
+
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // ------------------------------------------------------------ api
+  async function api(path, opts = {}) {
+    const res = await fetch(S.conn.url.replace(/\/+$/, '') + path, {
+      method: opts.method || 'GET',
+      headers: { 'X-Hub-Key': S.conn.pass, ...(opts.body ? { 'Content-Type': 'application/json' } : {}) },
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    let data = null;
+    try { data = await res.json(); } catch {}
+    if (!res.ok) throw new Error((data && data.error) || `Worker replied ${res.status}`);
+    return data;
+  }
+
+  // ------------------------------------------------------------ icons
+  const ICON = {
+    sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>',
+    moon: '<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>',
+    cloud: '<path d="M7 18h10.5a4 4 0 0 0 .4-8A6 6 0 0 0 6.3 11 3.5 3.5 0 0 0 7 18z"/>',
+    sunCloud: '<path d="M8.5 6.2A3.5 3.5 0 0 1 14 7.6M6 9.4a3.5 3.5 0 0 1 .4-1.6M8.5 3v1.4M3.4 9.3h1.4M4.9 5.6l1 1"/><path d="M8 19h9.5a3.5 3.5 0 0 0 .3-7A5 5 0 0 0 8.2 13 3 3 0 0 0 8 19z"/>',
+    rain: '<path d="M7 15h10.5a4 4 0 0 0 .4-8A6 6 0 0 0 6.3 8 3.5 3.5 0 0 0 7 15z"/><path d="M8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5"/>',
+    snow: '<path d="M7 15h10.5a4 4 0 0 0 .4-8A6 6 0 0 0 6.3 8 3.5 3.5 0 0 0 7 15z"/><path d="M8 19h.01M12 20h.01M16 19h.01" stroke-width="2.6" stroke-linecap="round"/>',
+    fog: '<path d="M4 9h16M6 13h12M4 17h16"/>',
+    bolt: '<path d="M7 15h10.5a4 4 0 0 0 .4-8A6 6 0 0 0 6.3 8 3.5 3.5 0 0 0 7 15z"/><path d="M12.5 15l-2 3.5h3l-2 3.5"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    sync: '<path d="M20 11a8 8 0 0 0-14.3-4.3M4 5v3.5h3.5M4 13a8 8 0 0 0 14.3 4.3M20 19v-3.5h-3.5"/>',
+    pin: '<path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7"/>',
+    cal: '<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+    ball: '<circle cx="12" cy="12" r="8"/><path d="M4.5 9.5c4 1 11 1 15 0M4.5 14.5c4-1 11-1 15 0M12 4v16"/>',
+  };
+  const svg = (name, size = 20, sw = 1.8) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name] || ICON.cloud}</svg>`;
+  const wxIcon = (sym = '') => {
+    if (sym.includes('bolt')) return 'bolt';
+    if (sym.includes('snow')) return 'snow';
+    if (sym.includes('rain') || sym.includes('drizzle')) return 'rain';
+    if (sym.includes('fog')) return 'fog';
+    if (sym.includes('moon') && sym.includes('cloud')) return 'cloud';
+    if (sym.includes('moon')) return 'moon';
+    if (sym.includes('sun') && sym.includes('cloud')) return 'sunCloud';
+    if (sym.includes('sun')) return 'sun';
+    return 'cloud';
+  };
+
+  // ------------------------------------------------------------ time
+  const fmtTime = (iso) => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const fmtHour = (iso) => new Date(iso).toLocaleTimeString([], { hour: 'numeric' }).replace(/\s?(AM|PM)/, (m) => m.trim().toLowerCase().charAt(0));
+  const sameDay = (a, b) => a.toDateString() === b.toDateString();
+  function dayLabel(iso) {
+    const d = new Date(iso), now = new Date(), tm = new Date(Date.now() + 864e5);
+    if (sameDay(d, now)) return 'Today';
+    if (sameDay(d, tm)) return 'Tomorrow';
+    return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+  }
+  function ago(ms) {
+    const s = Math.round((Date.now() - ms) / 1000);
+    if (s < 45) return 'just now';
+    if (s < 90) return 'a minute ago';
+    const m = Math.round(s / 60);
+    if (m < 60) return `${m} minutes ago`;
+    const h = Math.round(m / 60);
+    return h === 1 ? 'an hour ago' : `${h} hours ago`;
+  }
+  function untilText(iso) {
+    const m = Math.round((Date.parse(iso) - Date.now()) / 60000);
+    if (m <= 0) return 'now';
+    if (m < 60) return `in ${m} min`;
+    return '';
+  }
+  const clock = (ms) => {
+    const s = Math.max(0, Math.round(ms / 1000));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+    return h ? `${h}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}` : `${m}:${String(r).padStart(2, '0')}`;
+  };
+
+  // ------------------------------------------------------------ toast
+  let toastT;
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastT);
+    toastT = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ------------------------------------------------------------ sheet
+  function openSheet(title, html, onMount) {
+    $('#sheet-title').textContent = title;
+    $('#sheet-body').innerHTML = html;
+    const scrim = $('#scrim'), sheet = $('#sheet');
+    scrim.classList.remove('hidden');
+    sheet.removeAttribute('inert');
+    requestAnimationFrame(() => { scrim.classList.add('show'); sheet.classList.add('show'); });
+    onMount && onMount($('#sheet-body'));
+  }
+  function closeSheet() {
+    const scrim = $('#scrim'), sheet = $('#sheet');
+    scrim.classList.remove('show');
+    sheet.classList.remove('show');
+    sheet.setAttribute('inert', '');
+    setTimeout(() => scrim.classList.add('hidden'), 220);
+  }
+  $('#scrim').onclick = closeSheet;
+  $('#sheet-close').onclick = closeSheet;
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+
+  // ------------------------------------------------------------ settings save
+  let saveT;
+  function changed(mutator, msg = 'Saved') {
+    mutator(S.settings);
+    clearTimeout(saveT);
+    saveT = setTimeout(async () => {
+      try {
+        S.settings = await api('/api/settings', { method: 'PUT', body: S.settings });
+        toast(msg);
+        refresh(true);
+      } catch (e) { toast(e.message); }
+    }, 500);
+  }
+
+  // ------------------------------------------------------------ island (top)
+  const PRIORITY = { game: 0, scores: 0, meeting: 1, note: 2, weather: 3 };
+  let pillTimer;
+
+  function streamList() {
+    const st = (S.feed && S.feed.streams) || {};
+    return Object.entries(st).map(([key, v]) => ({ key, ...v })).sort((a, b) => (PRIORITY[a.kind] ?? 9) - (PRIORITY[b.kind] ?? 9));
+  }
+
+  function pillHTML(s) {
+    const cs = s.cs || {};
+    if (cs.type === 'stats' && s.kind === 'game' && cs.metrics && cs.metrics.length === 2) {
+      const [a, b] = cs.metrics;
+      return `<div class="pl-top"><span><span class="live-dot"></span>${esc(cs.title)}</span><span>${esc(cs.subtitle || '')}</span></div>
+        <div class="pl-main num"><span class="big"><span class="lab">${esc(a.label)}</span>${esc(a.value)}</span><span class="big">${esc(b.value)}<span class="lab" style="margin:0 0 0 6px">${esc(b.label)}</span></span></div>`;
+    }
+    if (cs.type === 'stats' && s.kind === 'scores') {
+      return `<div class="pl-top"><span><span class="live-dot"></span>${esc(cs.title)}</span><span>${esc(cs.subtitle || '')}</span></div>
+        <div class="pl-main num">${(cs.metrics || []).slice(0, 2).map((m) => `<span class="big" style="font-size:20px"><span class="lab">${esc(m.label)}</span>${esc(m.value)}</span>`).join('')}</div>`;
+    }
+    if (cs.type === 'timer') {
+      return `<div class="pl-top"><span>${esc(cs.title)}</span><span>${esc(cs.subtitle || '')}</span></div>
+        <div class="pl-main num"><span class="big" data-ends="${s.endsAt || ''}">${s.endsAt ? clock(s.endsAt - Date.now()) : ''}</span><span class="lab">${svg('cal', 18)}</span></div>`;
+    }
+    if (s.kind === 'weather') {
+      const now = (cs.metrics || [])[0];
+      return `<div class="pl-top"><span>${esc(cs.title)}</span><span>${esc(cs.subtitle || '')}</span></div>
+        <div class="pl-main num"><span class="big">${esc(now ? now.value : '')}</span><span class="lab">${(cs.metrics || []).slice(1, 3).map((m) => esc(m.label + ' ' + m.value)).join('&nbsp;&nbsp;')}</span></div>`;
+    }
+    return `<div class="pl-top"><span>${svg('pin', 12)} ${esc(cs.title || s.label)}</span></div><div class="pl-msg">${esc(cs.message || '')}</div>`;
+  }
+
+  function renderIsland() {
+    const list = streamList();
+    const pill = $('#pill'), body = $('#pill-body'), bubble = $('#bubble');
+    clearInterval(pillTimer);
+    if (!list.length) {
+      pill.classList.remove('open');
+      body.innerHTML = '';
+      bubble.classList.add('hidden');
+    } else {
+      body.innerHTML = pillHTML(list[0]);
+      requestAnimationFrame(() => pill.classList.add('open'));
+      if (list.length > 1) {
+        bubble.classList.remove('hidden');
+        bubble.innerHTML = list.length === 2 ? svg(list[1].kind === 'meeting' ? 'cal' : list[1].kind === 'weather' ? 'sun' : list[1].kind === 'note' ? 'pin' : 'ball', 18) : `+${list.length - 1}`;
+      } else bubble.classList.add('hidden');
+      const timerEl = body.querySelector('[data-ends]');
+      if (timerEl && timerEl.dataset.ends) pillTimer = setInterval(() => { timerEl.textContent = clock(Number(timerEl.dataset.ends) - Date.now()); }, 1000);
+    }
+
+    const f = S.feed;
+    const enabled = S.settings ? S.settings.enabled : true;
+    let note;
+    if (!enabled) note = 'Sending is paused. Turn it back on in Island.';
+    else if (!list.length) note = 'Nothing on your Island right now';
+    else note = list.length === 1 ? '1 live activity' : `${list.length} live activities`;
+    const synced = f && f.lastRun ? `, synced ${ago(f.lastRun.at)}` : '';
+    $('#top-note').innerHTML = `${esc(note)}${esc(synced)} <button id="sync-btn" aria-label="Sync now">${svg('sync', 14, 2)}</button>`;
+    $('#sync-btn').onclick = syncNow;
+    pill.setAttribute('aria-expanded', String(S.liveOpen));
+    renderLiveList();
+  }
+
+  function renderLiveList() {
+    const el = $('#live-list');
+    const list = streamList();
+    if (!S.liveOpen || !list.length) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    el.innerHTML = `<div class="group">${list.map((s) => `
+      <div class="row"><div class="grow"><div class="t">${esc(s.label || s.key)}</div><div class="s">${esc(kindName(s.kind))}, started ${esc(ago(s.startedAt))}</div></div>
+      <button class="btn quiet" style="padding:8px 14px;font-size:14px" data-end="${esc(s.key)}">End</button></div>`).join('')}
+      ${list.length > 1 ? `<div class="row"><button class="link grow" style="text-align:left" data-end="all">End all</button></div>` : ''}
+    </div>`;
+    el.querySelectorAll('[data-end]').forEach((b) => b.onclick = async () => {
+      b.disabled = true;
+      try {
+        await api('/api/end', { method: 'POST', body: { key: b.dataset.end } });
+        toast(b.dataset.end === 'all' ? 'Ended all' : 'Ended');
+        await refresh(true);
+      } catch (e) { toast(e.message); b.disabled = false; }
+    });
+  }
+  const kindName = (k) => ({ game: 'Game', scores: 'Scores', meeting: 'Meeting countdown', weather: 'Weather', note: 'Pinned note' }[k] || 'Activity');
+
+  $('#pill').onclick = () => { S.liveOpen = !S.liveOpen; renderIsland(); };
+  $('#bubble').onclick = () => { S.liveOpen = true; renderIsland(); };
+
+  async function syncNow() {
+    const b = $('#sync-btn');
+    b && b.querySelector('svg').classList.add('spinning');
+    try {
+      const r = await api('/api/sync', { method: 'POST' });
+      toast(r.notes && r.notes.length ? 'Synced with warnings, see Island' : 'Synced');
+      await refresh(true);
+    } catch (e) { toast(e.message); }
+  }
+
+  // ------------------------------------------------------------ NOW tab
+  function renderNow() {
+    const f = S.feed;
+    const el = $('#tab-now');
+    if (!f) { el.innerHTML = `<div class="group"><div class="empty">Loading…</div></div>`; return; }
+    el.innerHTML = [weatherBlock(f.weather), gamesBlock(f.scores), calendarBlock(f.calendar), inboxBlock(f.gmail), newsBlock(f.news)].join('');
+    el.querySelectorAll('[data-goto]').forEach((b) => b.onclick = () => setTab(b.dataset.goto));
+  }
+
+  function weatherBlock(w) {
+    if (!w || w.error) return `<div class="sec"><h2>Weather</h2></div><div class="group"><div class="empty err">${esc(w ? w.error : 'No weather yet')}</div></div>`;
+    return `<div class="sec"><h2>${esc(w.place || 'Weather')}</h2><span class="aside num">H ${w.high}° L ${w.low}°</span></div>
+    <div class="group wx">
+      <div class="wx-head">
+        <div class="wx-temp num">${w.temp}°</div>
+        <div class="wx-meta"><div class="t">${esc(w.condition)}</div><div class="s">Feels ${w.feels}°, wind ${w.wind} mph</div><div class="s">${w.rain}% chance of rain today</div></div>
+        <div class="wx-icon">${svg(wxIcon(w.symbol), 40, 1.5)}</div>
+      </div>
+      <div class="hours">${(w.hourly || []).map((h, i) => `<div class="hr"><div>${i === 0 ? 'Now' : esc(fmtHour(h.time))}</div>${svg(wxIcon(h.symbol), 22, 1.6)}<div class="rain">${h.rain >= 20 ? h.rain + '%' : ''}</div><b class="num">${h.temp}°</b></div>`).join('')}</div>
+    </div>`;
+  }
+
+  function gamesBlock(scores) {
+    const head = `<div class="sec"><h2>Games</h2><button class="link" data-goto="sources">Edit teams</button></div>`;
+    if (!scores || scores.error) return head + `<div class="group"><div class="empty err">${esc(scores ? scores.error : '')}</div></div>`;
+    if (!scores.length) return head + `<div class="group"><div class="empty">Add teams in Sources and their games show up here. Live games go to your Island automatically.</div></div>`;
+    const seen = new Set();
+    const rows = scores.map(({ team, game, next }) => {
+      if (game) {
+        if (seen.has(game.id)) return '';
+        seen.add(game.id);
+        return gameRow(game, game.state);
+      }
+      if (next && next.game) return gameRow(next.game, 'next', team, next.record);
+      return `<div class="game"><div class="side">${team.logo ? `<img src="${esc(team.logo)}" alt="" onerror="this.remove()">` : ''}<span class="nm">${esc(team.name)}</span>${next && next.record ? `<span class="rec">${esc(next.record)}</span>` : ''}</div><div></div><div class="gstat">No upcoming game found</div></div>`;
+    }).join('');
+    return head + `<div class="group">${rows}</div>`;
+  }
+
+  function gameRow(g, state, team, record) {
+    const live = state === 'in', final = state === 'post', pre = state === 'pre' || state === 'next';
+    const side = (t) => `<div class="side">${t.logo ? `<img src="${esc(t.logo)}" alt="" onerror="this.remove()" loading="lazy">` : ''}<span class="nm">${esc(t.name || t.abbr)}</span>${t.record && pre ? `<span class="rec">${esc(t.record)}</span>` : ''}</div>`;
+    const score = (t, other) => pre ? '<div></div>' : `<div class="sc num ${final && t.score < other.score ? 'dim' : ''}">${t.score ?? ''}</div>`;
+    let status;
+    if (live) status = `<span class="on"><span class="live-dot"></span>${esc(g.detail)}</span>`;
+    else if (final) status = esc(g.detail || 'Final');
+    else status = `${esc(dayLabel(g.date))}, ${esc(fmtTime(g.date))}`;
+    const onIsland = live && S.feed && S.feed.streams && (S.feed.streams['game-' + g.id] || S.feed.streams.scores);
+    return `<div class="game">${side(g.away)}${score(g.away, g.home)}${side(g.home)}${score(g.home, g.away)}
+      <div class="gstat">${status}<span style="margin-left:auto"></span>${onIsland ? '<span class="tag">On Island</span>' : ''}<span>${esc(g.leagueLabel)}</span></div></div>`;
+  }
+
+  function calendarBlock(cal) {
+    const head = `<div class="sec"><h2>Calendar</h2>${S.settings && S.settings.meeting.enabled ? `<span class="aside">Countdown ${S.settings.meeting.leadMinutes} min before</span>` : ''}</div>`;
+    if (!cal || cal.error) return head + `<div class="group"><div class="empty">${esc(cal ? cal.error : '')}. Connect the Google script to see your calendar.</div></div>`;
+    const evs = (cal.events || []).filter((e) => Date.parse(e.end) > Date.now());
+    if (!evs.length) return head + `<div class="group"><div class="empty">Nothing on your calendar for the next day and a half.</div></div>`;
+    let lastDay = '';
+    const rows = evs.slice(0, 10).map((e, i) => {
+      const day = dayLabel(e.start);
+      const brk = day !== lastDay && i > 0 ? `<div class="daybreak">${esc(day)}</div>` : '';
+      lastDay = day;
+      const soon = !e.allDay && Date.parse(e.start) - Date.now() < 60 * 60000 && Date.parse(e.start) > Date.now() - 60000;
+      const when = e.allDay ? 'All day' : soon ? untilText(e.start) : fmtTime(e.start);
+      return `${brk}<div class="ev ${soon ? 'soon' : ''}"><div class="when">${esc(when)}</div><div><div class="t">${esc(e.title)}</div>${e.location ? `<div class="s">${esc(e.location)}</div>` : !e.allDay ? `<div class="s num">${esc(fmtTime(e.start))} to ${esc(fmtTime(e.end))}</div>` : ''}</div></div>`;
+    }).join('');
+    const firstDay = dayLabel(evs[0].start);
+    return head.replace('<h2>Calendar</h2>', `<h2>${firstDay === 'Today' ? 'Today' : 'Calendar'}</h2>`) + `<div class="group">${rows}</div>`;
+  }
+
+  function inboxBlock(g) {
+    if (!S.settings || !S.settings.gmail.enabled) return '';
+    const head = `<div class="sec"><h2>Inbox</h2></div>`;
+    if (!g || g.error) return '';
+    return head + `<div class="group"><div class="unread num">${g.unread}<small>unread</small></div>
+      ${(g.threads || []).slice(0, 4).map((t) => `<div class="row"><a class="grow" href="${esc(t.link)}" target="_blank" rel="noopener"><div class="t">${esc(t.subject)}</div><div class="s">${esc(t.from)}</div></a></div>`).join('')}</div>`;
+  }
+
+  function newsBlock(news) {
+    const head = `<div class="sec"><h2>Headlines</h2><button class="link" data-goto="sources">Edit feeds</button></div>`;
+    if (!news || news.error) return head + `<div class="group"><div class="empty err">${esc(news ? news.error : '')}</div></div>`;
+    if (!news.length) return head + `<div class="group"><div class="empty">Add news feeds in Sources to fill this in.</div></div>`;
+    return head + `<div class="group">${news.slice(0, 12).map((n) => `<div class="row"><a class="grow" href="${esc(n.link)}" target="_blank" rel="noopener"><div class="t" style="white-space:normal">${esc(n.title)}</div><div class="s">${esc(n.source)}${n.date && !isNaN(Date.parse(n.date)) ? ', ' + esc(ago(Date.parse(n.date))) : ''}</div></a></div>`).join('')}</div>`;
+  }
+
+  // ------------------------------------------------------------ ISLAND tab
+  function sw(id, on, label, sub = '') {
+    return `<div class="row"><div class="grow"><label class="t" for="${id}" style="display:block;white-space:normal">${esc(label)}</label>${sub ? `<div class="s" style="white-space:normal">${esc(sub)}</div>` : ''}</div>
+      <label class="switch"><input type="checkbox" role="switch" id="${id}" ${on ? 'checked' : ''}><span></span></label></div>`;
+  }
+
+  function renderIslandTab() {
+    const s = S.settings;
+    const el = $('#tab-island');
+    if (!s) { el.innerHTML = ''; return; }
+    const lr = S.feed && S.feed.lastRun;
+    el.innerHTML = `
+      <h1 class="screen-title">Island</h1>
+      <div class="group"><div class="master">
+        <div class="grow"><label class="t" for="s-enabled">Send to my Island</label><div class="s" style="font-size:14px;color:var(--muted)">Turn off to pause everything</div></div>
+        <label class="switch"><input type="checkbox" role="switch" id="s-enabled" ${s.enabled ? 'checked' : ''}><span></span></label></div></div>
+
+      <div class="sec"><h2>Games</h2></div>
+      <div class="group">
+        ${sw('s-scores', s.scores.island, 'Live games', 'Starts at tip-off and ends with the final score')}
+        ${sw('s-combine', s.scores.combine, 'Put all games in one activity', 'Off gives each game its own spot, up to the iPhone limit')}
+      </div>
+
+      <div class="sec"><h2>Meetings</h2></div>
+      <div class="group">
+        ${sw('s-meeting', s.meeting.enabled, 'Countdown to next meeting')}
+        <div class="row"><div class="grow"><div class="t">How early</div></div>
+          <div class="seg" role="group" aria-label="Minutes before">${[10, 15, 30, 60].map((m) => `<button data-lead="${m}" class="${s.meeting.leadMinutes === m ? 'on' : ''}" aria-pressed="${s.meeting.leadMinutes === m}">${m}m</button>`).join('')}</div></div>
+        ${sw('s-hide', s.meeting.hideTitles, 'Hide meeting names', 'Shows "Meeting" on your Lock Screen instead of the title')}
+      </div>
+
+      <div class="sec"><h2>Weather</h2></div>
+      <div class="group">
+        ${sw('s-wxpin', s.weather.pinned, 'Keep weather pinned', 'Uses one of your two Island spots all day')}
+        ${sw('s-badge', s.gmail.badge, 'Unread Gmail on the app icon', 'Shows your unread count as the ActivitySmith badge')}
+      </div>
+
+      <div class="sec"><h2>Quiet hours</h2></div>
+      <div class="group">
+        ${sw('s-quiet', s.quiet.enabled, 'Don’t start anything new', 'Activities already running keep updating')}
+        <div class="row ${s.quiet.enabled ? '' : 'hidden'}" id="quiet-times"><div class="grow"><div class="t">From</div></div>
+          <input class="field num" type="time" id="q-start" value="${esc(s.quiet.start)}" aria-label="Quiet hours start">
+          <span class="s">to</span>
+          <input class="field num" type="time" id="q-end" value="${esc(s.quiet.end)}" aria-label="Quiet hours end"></div>
+      </div>
+
+      <div class="sec"><h2>Pin a note</h2></div>
+      <div class="group"><div class="stack">
+        <input class="field" id="n-title" maxlength="60" placeholder="Title, like Leave by 5:15">
+        <input class="field" id="n-msg" maxlength="140" placeholder="Message">
+        <button class="btn" id="n-go">Pin note</button>
+      </div></div>
+      <p class="hint">Stays on your Island until you end it from the top of this app.</p>
+
+      <div class="sec"><h2>Last sync</h2><button class="link" id="sync2">Sync now</button></div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t">${lr ? esc(ago(lr.at)) : 'Not yet'}</div><div class="s">${lr ? (lr.quiet ? 'Quiet hours were on' : lr.manual ? 'You started this sync' : 'Runs every 2 minutes') : 'Runs every 2 minutes once the cron trigger is set'}</div></div></div>
+        ${lr && lr.notes && lr.notes.length ? `<div class="notes"><ul style="margin:0;padding-left:18px">${lr.notes.map((n) => `<li class="err">${esc(n)}</li>`).join('')}</ul></div>` : ''}
+      </div>`;
+
+    const bind = (id, fn) => { const i = $('#' + id, el); i && (i.onchange = () => changed((st) => fn(st, i.checked))); };
+    bind('s-enabled', (st, v) => st.enabled = v);
+    bind('s-scores', (st, v) => st.scores.island = v);
+    bind('s-combine', (st, v) => st.scores.combine = v);
+    bind('s-meeting', (st, v) => st.meeting.enabled = v);
+    bind('s-hide', (st, v) => st.meeting.hideTitles = v);
+    bind('s-wxpin', (st, v) => st.weather.pinned = v);
+    bind('s-badge', (st, v) => st.gmail.badge = v);
+    $('#s-quiet', el).onchange = (e) => { changed((st) => st.quiet.enabled = e.target.checked); $('#quiet-times', el).classList.toggle('hidden', !e.target.checked); };
+    $('#q-start', el).onchange = (e) => changed((st) => st.quiet.start = e.target.value);
+    $('#q-end', el).onchange = (e) => changed((st) => st.quiet.end = e.target.value);
+    el.querySelectorAll('[data-lead]').forEach((b) => b.onclick = () => {
+      el.querySelectorAll('[data-lead]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+      changed((st) => st.meeting.leadMinutes = Number(b.dataset.lead));
+    });
+    $('#n-go', el).onclick = async () => {
+      const title = $('#n-title', el).value.trim(), message = $('#n-msg', el).value.trim();
+      if (!title || !message) { toast('Add a title and a message'); return; }
+      const b = $('#n-go', el); b.disabled = true;
+      try {
+        await api('/api/note', { method: 'POST', body: { title, message } });
+        toast('Pinned');
+        $('#n-title', el).value = ''; $('#n-msg', el).value = '';
+        await refresh(true);
+      } catch (e) { toast(e.message); }
+      b.disabled = false;
+    };
+    $('#sync2', el).onclick = syncNow;
+  }
+
+  // ------------------------------------------------------------ SOURCES tab
+  const FEED_PRESETS = [
+    { name: 'ESPN', url: 'https://www.espn.com/espn/rss/news' },
+    { name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
+    { name: 'Hacker News', url: 'https://hnrss.org/frontpage' },
+    { name: 'BBC News', url: 'https://feeds.bbci.co.uk/news/rss.xml' },
+    { name: 'NYT', url: 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml' },
+    { name: 'Jalopnik', url: 'https://jalopnik.com/rss' },
+  ];
+
+  function renderSources() {
+    const s = S.settings;
+    const el = $('#tab-sources');
+    if (!s) { el.innerHTML = ''; return; }
+    const leagueName = (id) => (S.leagues.find((l) => l.id === id) || {}).label || id.toUpperCase();
+    el.innerHTML = `
+      <h1 class="screen-title">Sources</h1>
+
+      <div class="sec"><h2>Teams</h2><button class="link" id="add-team">Add team</button></div>
+      <div class="group">${s.teams.length ? s.teams.map((t, i) => `
+        <div class="row">${t.logo ? `<img class="logo" src="${esc(t.logo)}" alt="" onerror="this.remove()">` : ''}<div class="grow"><div class="t">${esc(t.name)}</div><div class="s">${esc(leagueName(t.league))}</div></div>
+        <button class="x" data-rm-team="${i}" aria-label="Remove ${esc(t.name)}">${svg('x', 18)}</button></div>`).join('') : `<div class="empty">No teams yet. Add one to get live games on your Island.</div>`}</div>
+
+      <div class="sec"><h2>Headlines</h2></div>
+      <div class="group">${s.feeds.map((f, i) => `
+        <div class="row"><div class="grow"><div class="t">${esc(f.name)}</div><div class="s">${esc(f.url)}</div></div>
+        <button class="x" data-rm-feed="${i}" aria-label="Remove ${esc(f.name)}">${svg('x', 18)}</button></div>`).join('')}
+        <div class="stack" style="${s.feeds.length ? 'border-top:1px solid var(--rule)' : ''}">
+          <input class="field" id="f-name" placeholder="Name">
+          <input class="field" id="f-url" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="Feed address (RSS or Atom)">
+          <button class="btn quiet" id="f-add">Add feed</button>
+        </div>
+        <div class="chips">${FEED_PRESETS.map((p, i) => `<button class="chip" data-preset="${i}" ${s.feeds.some((f) => f.url === p.url) ? 'disabled' : ''}>${esc(p.name)}</button>`).join('')}</div>
+      </div>
+      <p class="hint">Headlines show here in the app. They don’t go to your Island.</p>
+
+      <div class="sec"><h2>Weather spot</h2><button class="link" id="geo">Use my location</button></div>
+      <div class="group"><div class="stack">
+        <input class="field" id="w-place" value="${esc(s.weather.place)}" placeholder="Name it">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <input class="field num" id="w-lat" inputmode="decimal" value="${esc(s.weather.lat)}" aria-label="Latitude">
+          <input class="field num" id="w-lon" inputmode="decimal" value="${esc(s.weather.lon)}" aria-label="Longitude">
+        </div>
+      </div></div>
+
+      <div class="sec"><h2>Google</h2></div>
+      <div class="group">
+        ${sw('s-gmail', s.gmail.enabled, 'Show my inbox on Now', 'Unread count and latest emails, from your Google script')}
+        <div class="row"><div class="grow"><label class="t" for="w-widget">Lock Screen weather widget</label><div class="s" style="white-space:normal">Optional. Paste a widget metric key from ActivitySmith to show the temperature on your Lock Screen.</div></div></div>
+        <div class="stack" style="padding-top:0"><input class="field" id="w-widget" value="${esc(s.weather.widgetKey)}" autocapitalize="off" spellcheck="false" placeholder="weather.temp"></div>
+      </div>
+
+      <div class="sec"><h2>Connection</h2></div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t">Worker</div><div class="s">${esc(S.conn.url)}</div></div></div>
+        <div class="row"><button class="link grow err" style="text-align:left" id="disconnect">Disconnect this device</button></div>
+      </div>`;
+
+    $('#add-team', el).onclick = openTeamPicker;
+    el.querySelectorAll('[data-rm-team]').forEach((b) => b.onclick = () => changed((st) => st.teams.splice(Number(b.dataset.rmTeam), 1), 'Removed'));
+    el.querySelectorAll('[data-rm-feed]').forEach((b) => b.onclick = () => changed((st) => st.feeds.splice(Number(b.dataset.rmFeed), 1), 'Removed'));
+    el.querySelectorAll('[data-preset]').forEach((b) => b.onclick = () => changed((st) => st.feeds.push(FEED_PRESETS[Number(b.dataset.preset)]), 'Feed added'));
+    $('#f-add', el).onclick = () => {
+      const url = $('#f-url', el).value.trim();
+      let name = $('#f-name', el).value.trim();
+      if (!/^https?:\/\//.test(url)) { toast('Feed address needs to start with https://'); return; }
+      if (!name) { try { name = new URL(url).hostname.replace(/^www\./, ''); } catch { name = 'Feed'; } }
+      changed((st) => st.feeds.push({ name, url }), 'Feed added');
+    };
+    const wx = () => changed((st) => {
+      st.weather.place = $('#w-place', el).value.trim() || 'Weather';
+      st.weather.lat = Number($('#w-lat', el).value);
+      st.weather.lon = Number($('#w-lon', el).value);
+    });
+    ['w-place', 'w-lat', 'w-lon'].forEach((id) => $('#' + id, el).onchange = wx);
+    $('#w-widget', el).onchange = (e) => changed((st) => st.weather.widgetKey = e.target.value.trim());
+    $('#s-gmail', el).onchange = (e) => changed((st) => st.gmail.enabled = e.target.checked);
+    $('#geo', el).onclick = () => {
+      if (!navigator.geolocation) { toast('Location isn’t available here'); return; }
+      navigator.geolocation.getCurrentPosition((p) => {
+        $('#w-lat', el).value = p.coords.latitude.toFixed(4);
+        $('#w-lon', el).value = p.coords.longitude.toFixed(4);
+        $('#w-place', el).value = $('#w-place', el).value || 'Here';
+        wx();
+      }, () => toast('Location permission was denied'), { timeout: 10000 });
+    };
+    $('#disconnect', el).onclick = () => {
+      if (!confirm('Disconnect this device? Your settings stay on the Worker.')) return;
+      LS.del('conn'); LS.del('feed');
+      location.reload();
+    };
+  }
+
+  async function openTeamPicker() {
+    if (!S.leagues.length) {
+      try { S.leagues = await api('/api/leagues'); } catch (e) { toast(e.message); return; }
+    }
+    openSheet('Add a team', `
+      <div class="pad">
+        <select class="field" id="tp-league" aria-label="League">${S.leagues.map((l) => `<option value="${esc(l.id)}">${esc(l.label)}</option>`).join('')}</select>
+        <input class="field" id="tp-q" placeholder="Search teams" autocomplete="off" aria-label="Search teams">
+      </div>
+      <div id="tp-list"><div class="empty">Loading teams…</div></div>`, (body) => {
+      let teams = [];
+      const list = $('#tp-list', body), q = $('#tp-q', body), lg = $('#tp-league', body);
+      const draw = () => {
+        const term = q.value.trim().toLowerCase();
+        const have = new Set(S.settings.teams.map((t) => t.league + ':' + t.abbr));
+        const shown = teams.filter((t) => !term || t.name.toLowerCase().includes(term) || t.abbr.toLowerCase() === term).slice(0, 80);
+        list.innerHTML = shown.length ? shown.map((t, i) => `
+          <div class="row">${t.logo ? `<img class="logo" src="${esc(t.logo)}" alt="" onerror="this.remove()" loading="lazy">` : ''}<div class="grow"><div class="t">${esc(t.name)}</div><div class="s">${esc(t.abbr)}</div></div>
+          ${have.has(t.league + ':' + t.abbr) ? '<span class="s">Added</span>' : `<button class="btn quiet" style="padding:8px 14px;font-size:14px" data-pick="${teams.indexOf(t)}">Add</button>`}</div>`).join('')
+          : `<div class="empty">No teams match that.</div>`;
+        list.querySelectorAll('[data-pick]').forEach((b) => b.onclick = () => {
+          const t = teams[Number(b.dataset.pick)];
+          changed((st) => st.teams.push({ league: t.league, id: t.id, abbr: t.abbr, name: t.name, logo: t.logo, color: t.color }), `${t.short || t.name} added`);
+          b.outerHTML = '<span class="s">Added</span>';
+        });
+      };
+      const load = async () => {
+        list.innerHTML = `<div class="empty">Loading teams…</div>`;
+        try { teams = await api('/api/teams?league=' + encodeURIComponent(lg.value)); draw(); }
+        catch (e) { list.innerHTML = `<div class="empty err">${esc(e.message)}</div>`; }
+      };
+      lg.onchange = load;
+      q.oninput = draw;
+      load();
+    });
+  }
+
+  // ------------------------------------------------------------ tabs + refresh
+  function setTab(t) {
+    S.tab = t;
+    document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+    ['now', 'island', 'sources'].forEach((id) => $('#tab-' + id).classList.toggle('hidden', id !== t));
+    window.scrollTo({ top: 0 });
+  }
+  document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => setTab(b.dataset.tab));
+
+  function renderAll() {
+    renderIsland();
+    renderNow();
+    renderIslandTab();
+    renderSources();
+  }
+
+  let refreshing = false;
+  async function refresh(quiet) {
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      const f = await api('/api/feed');
+      S.feed = f;
+      S.settings = f.settings;
+      LS.set('feed', f);
+      const active = document.activeElement;
+      const typing = active && (active.tagName === 'INPUT' || active.tagName === 'SELECT') && !$('#sheet').contains(active);
+      renderIsland();
+      renderNow();
+      if (!typing) { renderIslandTab(); renderSources(); }
+    } catch (e) {
+      if (e.message === 'Wrong passcode') { LS.del('conn'); showConnect('Your passcode changed. Enter the new one.'); }
+      else if (!quiet) toast(e.message);
+    } finally {
+      refreshing = false;
+    }
+  }
+
+  // ------------------------------------------------------------ connect
+  function showConnect(msg) {
+    $('#connect').classList.remove('hidden');
+    $('#app').classList.add('hidden');
+    $('#tabs').classList.add('hidden');
+    if (S.conn) { $('#c-url').value = S.conn.url; }
+    if (msg) { $('#c-err').textContent = msg; $('#c-err').classList.remove('hidden'); }
+  }
+  $('#c-go').onclick = async () => {
+    const url = $('#c-url').value.trim().replace(/\/+$/, ''), pass = $('#c-pass').value;
+    const err = $('#c-err');
+    err.classList.add('hidden');
+    if (!/^https:\/\//.test(url)) { err.textContent = 'The address should start with https://'; err.classList.remove('hidden'); return; }
+    if (!pass) { err.textContent = 'Enter your passcode'; err.classList.remove('hidden'); return; }
+    S.conn = { url, pass };
+    $('#c-go').disabled = true;
+    try {
+      S.settings = await api('/api/settings');
+      LS.set('conn', S.conn);
+      start();
+    } catch (e) {
+      err.textContent = e.message === 'Failed to fetch' ? 'Couldn’t reach that address. Check the Worker URL.' : e.message;
+      err.classList.remove('hidden');
+    }
+    $('#c-go').disabled = false;
+  };
+
+  function start() {
+    $('#connect').classList.add('hidden');
+    $('#app').classList.remove('hidden');
+    $('#tabs').classList.remove('hidden');
+    if (S.feed) { S.settings = S.settings || S.feed.settings; renderAll(); }
+    else renderNow();
+    api('/api/leagues').then((l) => { S.leagues = l; if (S.tab === 'sources') renderSources(); }).catch(() => {});
+    refresh().then(() => renderAll());
+  }
+
+  setInterval(() => { if (document.visibilityState === 'visible' && S.conn && !$('#app').classList.contains('hidden')) refresh(true); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.conn && !$('#app').classList.contains('hidden')) refresh(true); });
+
+  // ------------------------------------------------------------ home screen icon
+  (function icon() {
+    try {
+      const c = document.createElement('canvas'); c.width = c.height = 180;
+      const x = c.getContext('2d');
+      x.fillStyle = '#E3E5E8'; x.fillRect(0, 0, 180, 180);
+      x.fillStyle = '#000';
+      const r = (px, py, w, h, rad) => { x.beginPath(); x.roundRect(px, py, w, h, rad); x.fill(); };
+      r(30, 72, 92, 36, 18);
+      x.beginPath(); x.arc(140, 90, 18, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#FF3B30'; x.beginPath(); x.arc(52, 90, 6, 0, Math.PI * 2); x.fill();
+      const href = c.toDataURL('image/png');
+      const l = document.createElement('link'); l.rel = 'apple-touch-icon'; l.href = href; document.head.appendChild(l);
+      const f = document.createElement('link'); f.rel = 'icon'; f.href = href; document.head.appendChild(f);
+      const manifest = { name: 'Islet', short_name: 'Islet', display: 'standalone', start_url: location.href.split('#')[0], background_color: '#E3E5E8', theme_color: '#E3E5E8', icons: [{ src: href, sizes: '180x180', type: 'image/png' }] };
+      const m = document.createElement('link'); m.rel = 'manifest';
+      m.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
+      document.head.appendChild(m);
+    } catch {}
+  })();
+
+  // ------------------------------------------------------------ boot
+  if (S.conn) start(); else showConnect();
+})();
+</script>
+</body>
+</html>
